@@ -19,11 +19,16 @@ References:
   - http://en.wikipedia.org/wiki/JSON
   - https://developer.mozilla.org/en-US/docs/JSON
   - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
+
++ restler
+  - https://github.com/danwrong/restler
+
 */
 
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
+var restler = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
@@ -65,9 +70,23 @@ if(require.main == module) {
     program
 	.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
 	.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+	.option('-u, --url <path>', 'URL')
 	.parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+
+    var checkSrc = '';
+    var checkJson = '';
+    if(program.file !== null && program.file !== '') {
+      checkJson = checkHtmlFile(program.file, program.checks);
+    }
+    if(program.url !== null && program.url !== '' ) {
+      restler.get(program.url).on('complete', function(data) {checkSrc = data;});
+      if(checkSrc !== null && checkSrc !== ''){
+	checkJson = checkHtmlFile(checkSrc, program.checks);
+      }
+    }
+
     var outJson = JSON.stringify(checkJson, null, 4);
+
     console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
